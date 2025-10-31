@@ -1,9 +1,20 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { PagesShell } from "@/app/(pages)/page";
 import ChatBot from "@/components/ui/chatbot";
 import CreditBoost from "@/components/modals/CreditBoost";
 import FarmerFormModal from "@/components/modals/FarmerFormModal";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 // Stat card component
 type StatCardProps = {
@@ -26,8 +37,17 @@ function StatCard({ title, value, sub, children }: StatCardProps) {
   );
 }
 
+// Mock API data type
+type FarmChartData = {
+  date: string;
+  cropYield: number;
+  livestockValue: number;
+  landValue: number;
+}[];
+
 export default function FarmerDashboard() {
   const [showForm, setShowForm] = useState(false);
+  const [chartData, setChartData] = useState<FarmChartData>([]);
 
   const items = [
     { label: "Overview", href: "/farmersDashboard", active: true },
@@ -36,7 +56,7 @@ export default function FarmerDashboard() {
     { label: "Farm Health", href: "#farm-health" },
     { label: "Credit Score", href: "#credit-score" },
     { label: "Loans", href: "#credit" },
-    { label: "Heko Insights", href: "/farmersDashboard/heko-insights" }, // fixed path
+    { label: "Heko Insights", href: "/farmersDashboard/heko-insights" },
   ];
 
   const loans = [
@@ -44,6 +64,24 @@ export default function FarmerDashboard() {
     { date: "2024-08-04", amount: "$5,000", lender: "GreenFund", status: "Active", rate: "10%", term: "10 mo" },
     { date: "2025-03-22", amount: "$2,000", lender: "RuralCredit", status: "Active", rate: "11%", term: "6 mo" },
   ];
+
+  // Fetch chart data from API (or mock)
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const mockData: FarmChartData = [
+          { date: "Jan", cropYield: 500, livestockValue: 2000, landValue: 10000 },
+          { date: "Feb", cropYield: 600, livestockValue: 2100, landValue: 10200 },
+          { date: "Mar", cropYield: 550, livestockValue: 2050, landValue: 10150 },
+          { date: "Apr", cropYield: 700, livestockValue: 2200, landValue: 10400 },
+        ];
+        setChartData(mockData);
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+      }
+    };
+    fetchChartData();
+  }, []);
 
   return (
     <PagesShell
@@ -110,6 +148,25 @@ export default function FarmerDashboard() {
             </div>
           </div>
         </StatCard>
+      </section>
+
+      {/* Farm Data Chart */}
+      <section id="farm-data" className="mt-12">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Farm Data Overview</h2>
+        <div className="rounded-sm border bg-white p-4 shadow-sm h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="cropYield" stroke="#8884d8" name="Crop Yield" />
+              <Line type="monotone" dataKey="livestockValue" stroke="#82ca9d" name="Livestock Value" />
+              <Line type="monotone" dataKey="landValue" stroke="#ffc658" name="Land Value" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </section>
 
       <section id="credit" className="mt-12">
