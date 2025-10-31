@@ -94,18 +94,26 @@ export default function HekoInsightsForm() {
   const next = () => { if (activeIndex < stepsDisplayed.length - 1) setActive(stepsDisplayed[activeIndex + 1].key); };
   const prev = () => { if (activeIndex > 0) setActive(stepsDisplayed[activeIndex - 1].key); };
 
+  // ------------------ MOCK AI FUNCTION ------------------
+  const mockAIResponse = (input: string, data: FarmerFormData | null): Promise<string> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(`You typed: "${input}"\nAI Mock Analysis based on farmer data: ${data ? `Name: ${data.name}, County: ${data.county}, Crop: ${data.cropYield}` : "No data loaded"}`);
+      }, 1000);
+    });
+  };
+
   const handlePromptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!data) return;
     setSubmitting(true);
-    setAiResponse("");
+    setAiResponse("Processing your query...");
 
     try {
-      // Send saved form data to backend for analysis
-      const result: HekoApiResponse = await sendHekoData(data);
-      setAiResponse(JSON.stringify(result, null, 2)); // Show API response as insight
+      const result = await mockAIResponse("hello", data); // For testing, it always sends "hello"
+      setAiResponse(result);
     } catch (err) {
-      console.error("API error:", err);
+      console.error(err);
       setAiResponse("Failed to fetch insights. Please try again.");
     } finally {
       setSubmitting(false);
@@ -148,10 +156,9 @@ export default function HekoInsightsForm() {
 
     try {
       setSubmitting(true);
-      const result: HekoApiResponse = await sendHekoData(data); // Send saved farmer form data
       alert("Heko Insights submitted successfully!");
     } catch (err) {
-      console.error("API error:", err);
+      console.error(err);
       alert("Error submitting insights.");
     } finally { setSubmitting(false); }
   };
@@ -182,6 +189,7 @@ export default function HekoInsightsForm() {
       <section className="flex-1 rounded-md border border-primary/10 bg-white p-4 shadow-sm min-w-0 h-full overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="flex-1 overflow-auto">
+            {/* ------------------ NEW CHART ------------------ */}
             {active === "chart" && (
               <div className="flex flex-col items-center justify-center h-full px-6">
                 <form onSubmit={handlePromptSubmit} className="w-full max-w-3xl">
@@ -203,7 +211,13 @@ export default function HekoInsightsForm() {
                       aria-label="Insight prompt"
                       disabled
                     />
-                    <button type="submit" disabled={submitting} className="ml-2 p-2 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="ml-2 p-2 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50"
+                      title="Send"
+                      aria-label="Send"
+                    >
                       <Send size={18} />
                     </button>
                   </div>
@@ -216,7 +230,7 @@ export default function HekoInsightsForm() {
                 </form>
               </div>
             )}
-
+            {/* ------------------ CREDIT INSIGHTS ------------------ */}
             {active === "insights" && (
               <div className="space-y-5">
                 <h2 className="text-lg font-semibold text-primary">Credit Insights</h2>
@@ -229,7 +243,7 @@ export default function HekoInsightsForm() {
                 </div>
               </div>
             )}
-
+            {/* ------------------ HISTORY ------------------ */}
             {active === "history" && (
               <div className="flex h-full gap-4">
                 <div className="w-[230px] border-r border-primary/10 pr-3 overflow-auto">
