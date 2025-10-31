@@ -157,6 +157,132 @@ export default function FarmerMultiStepForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [apiResponse, setApiResponse] = useState<HekoApiResponse | null>(null);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<"john" | "mary" | "peter" | "amina">("john");
+
+  // Shared offer options used in Offers step and Finish modal
+  const lenderOptions = useMemo(() => (
+    [
+      { id: "lend-a", name: "AgriBank", rate: "10%", term: "12 mo", max: "$5,000" },
+      { id: "lend-b", name: "GreenFund", rate: "12%", term: "10 mo", max: "$8,000" },
+      { id: "lend-c", name: "RuralCredit", rate: "8%", term: "6 mo", max: "$3,500" },
+    ]
+  ), []);
+  const supplierOptions = useMemo(() => (
+    [
+      { id: "sup-a", name: "AgriInputs Co.", offer: "Fertilizer & Seeds", terms: "Net 30", support: "Field training" },
+      { id: "sup-b", name: "IrrigaTech", offer: "Irrigation kits", terms: "Lease-to-own", support: "Installation" },
+      { id: "sup-c", name: "CropCare", offer: "Crop protection", terms: "Discount 8%", support: "Advisory" },
+    ]
+  ), []);
+
+  // Demo profiles used for Auto-fill; all values map cleanly to API schema through toApiPayload
+  const demoProfiles = useMemo(() => ({
+    john: {
+      name: "John Doe",
+      gender: "Male",
+      age: "35",
+      county: "Nairobi",
+      inCoop: "Yes",
+      experience: "15",
+      cropYield: "5.2",
+      landOwned: "10.5",
+      landCultivated: "10.5",
+      farmingType: "Crop",
+      livestockCount: "0",
+      farmingDetails: "",
+      reputationScore: "75",
+      resourceAccess: "Medium",
+      practiceQuality: "70",
+      incomeMonthly: "1000",
+      expensesMonthly: "300",
+      incomeAnnual: "12000",
+      expensesAnnual: "3600",
+      repaymentHistory: "Yes",
+      attachments: [],
+      seekingPreference: "Credit",
+      selectedLender: undefined,
+      selectedSupplier: undefined,
+    } as FarmerFormData,
+    mary: {
+      name: "Mary Wanjiru",
+      gender: "Female",
+      age: "29",
+      county: "Nakuru",
+      inCoop: "No",
+      experience: "6",
+      cropYield: "3.8",
+      landOwned: "4.0",
+      landCultivated: "3.5",
+      farmingType: "Crop",
+      livestockCount: "2",
+      farmingDetails: "Maize and beans rotation.",
+      reputationScore: "68",
+      resourceAccess: "Medium",
+      practiceQuality: "65",
+      incomeMonthly: "900",
+      expensesMonthly: "450",
+      incomeAnnual: "10800",
+      expensesAnnual: "5400",
+      repaymentHistory: "No",
+      attachments: [],
+      seekingPreference: "Resources",
+      selectedLender: undefined,
+      selectedSupplier: undefined,
+    } as FarmerFormData,
+    peter: {
+      name: "Peter Otieno",
+      gender: "Male",
+      age: "41",
+      county: "Kisumu",
+      inCoop: "Yes",
+      experience: "14",
+      cropYield: "6.3",
+      landOwned: "8.5",
+      landCultivated: "7.2",
+      farmingType: "Mixed",
+      livestockCount: "10",
+      farmingDetails: "Dairy and sugarcane.",
+      reputationScore: "83",
+      resourceAccess: "High",
+      practiceQuality: "80",
+      incomeMonthly: "1400",
+      expensesMonthly: "700",
+      incomeAnnual: "16800",
+      expensesAnnual: "8400",
+      repaymentHistory: "Yes",
+      attachments: [],
+      seekingPreference: "Both",
+      selectedLender: undefined,
+      selectedSupplier: undefined,
+    } as FarmerFormData,
+    amina: {
+      name: "Amina Hassan",
+      gender: "Female",
+      age: "33",
+      county: "Mombasa",
+      inCoop: "No",
+      experience: "9",
+      cropYield: "1.2",
+      landOwned: "2.5",
+      landCultivated: "2.0",
+      farmingType: "Livestock",
+      livestockCount: "18",
+      farmingDetails: "Goats and poultry.",
+      reputationScore: "57",
+      resourceAccess: "Low",
+      practiceQuality: "58",
+      incomeMonthly: "700",
+      expensesMonthly: "400",
+      incomeAnnual: "8400",
+      expensesAnnual: "4800",
+      repaymentHistory: "No",
+      attachments: [],
+      seekingPreference: "Resources",
+      selectedLender: undefined,
+      selectedSupplier: undefined,
+    } as FarmerFormData,
+  }), []);
 
   const stepsDisplayed = useMemo(
     () => (submitted ? steps : steps.filter((s) => s.key !== "offers")),
@@ -215,33 +341,10 @@ export default function FarmerMultiStepForm() {
     } as const;
   };
 
-  // Generate demo data quickly
-  const generateDemoData = (): FarmerFormData => ({
-    name: "John Doe",
-    gender: "Male",
-    age: "35",
-    county: "Nairobi",
-    inCoop: "Yes",
-    experience: "15",
-    cropYield: "5.2",
-    landOwned: "10.5",
-    landCultivated: "10.5",
-    farmingType: "Crop",
-    livestockCount: "0",
-    farmingDetails: "",
-    reputationScore: "75",
-    resourceAccess: "Medium",
-    practiceQuality: "70",
-    incomeMonthly: "1000",
-    expensesMonthly: "300",
-    incomeAnnual: "12000",
-    expensesAnnual: "3600",
-    repaymentHistory: "Yes",
-    attachments: [],
-    seekingPreference: "Credit",
-    selectedLender: undefined,
-    selectedSupplier: undefined,
-  });
+  // Generate demo data quickly based on selected profile
+  const generateDemoData = (): FarmerFormData => {
+    return demoProfiles[selectedProfile] || demoProfiles.john;
+  };
 
   const handleAutoFill = () => {
     const demo = generateDemoData();
@@ -387,6 +490,7 @@ export default function FarmerMultiStepForm() {
   };
 
   return (
+    <>
     <form onSubmit={onSubmit} className="flex h-[70vh] gap-4">
       <aside className="w-[260px] shrink-0 rounded-sm border bg-white p-4 shadow-sm h-full overflow-auto">
         <div className="text-sm font-semibold text-foreground">Steps</div>
@@ -579,11 +683,7 @@ export default function FarmerMultiStepForm() {
                     <div>
                       <div className="mb-2 text-sm font-medium text-foreground">Lenders</div>
                       <ul className="space-y-2 text-sm">
-                        {[
-                          { id: "lend-a", name: "AgriBank", rate: "10%", term: "12 mo", max: "$5,000" },
-                          { id: "lend-b", name: "GreenFund", rate: "12%", term: "10 mo", max: "$8,000" },
-                          { id: "lend-c", name: "RuralCredit", rate: "8%", term: "6 mo", max: "$3,500" },
-                        ].map((l) => (
+                        {lenderOptions.map((l) => (
                           <li key={l.id} className="rounded-sm border p-3">
                             <label className="flex w-full cursor-pointer items-center gap-3">
                               <input
@@ -604,11 +704,7 @@ export default function FarmerMultiStepForm() {
                     <div>
                       <div className="mb-2 text-sm font-medium text-foreground">Suppliers</div>
                       <ul className="space-y-2 text-sm">
-                        {[
-                          { id: "sup-a", name: "AgriInputs Co.", offer: "Fertilizer & Seeds", terms: "Net 30", support: "Field training" },
-                          { id: "sup-b", name: "IrrigaTech", offer: "Irrigation kits", terms: "Lease-to-own", support: "Installation" },
-                          { id: "sup-c", name: "CropCare", offer: "Crop protection", terms: "Discount 8%", support: "Advisory" },
-                        ].map((s) => (
+                        {supplierOptions.map((s) => (
                           <li key={s.id} className="rounded-sm border p-3">
                             <label className="flex w-full cursor-pointer items-center gap-3">
                               <input
@@ -634,9 +730,7 @@ export default function FarmerMultiStepForm() {
                     <div className="rounded-sm border p-4">
                       <div className="text-sm font-medium text-foreground mb-2">Limited Loan Offers</div>
                       <ul className="space-y-2 text-sm">
-                        {[
-                          { id: "lend-c", name: "RuralCredit", rate: "12%", term: "6 mo", max: "$2,000" },
-                        ].map((l) => (
+                        {lenderOptions.filter(l => l.id === "lend-c").map((l) => (
                           <li key={l.id} className="rounded-sm border p-3">
                             <label className="flex w-full cursor-pointer items-center gap-3">
                               <input type="radio" name="lender" checked={data.selectedLender === l.id} onChange={() => update("selectedLender", l.id)} />
@@ -679,6 +773,17 @@ export default function FarmerMultiStepForm() {
               <button type="button" onClick={prev} disabled={active === steps[0].key} className="rounded-sm border px-3 py-2 text-sm disabled:opacity-50">
               Back
               </button>
+              <select
+                className="rounded-sm border px-2 py-2 text-sm text-foreground"
+                value={selectedProfile}
+                onChange={(e) => setSelectedProfile(e.target.value as any)}
+                title="Choose demo profile"
+              >
+                <option value="john">John Doe</option>
+                <option value="mary">Mary Wanjiru</option>
+                <option value="peter">Peter Otieno</option>
+                <option value="amina">Amina Hassan</option>
+              </select>
               <button type="button" onClick={handleClearAll} className="rounded-sm border px-3 py-2 text-sm">
                 Clear All
               </button>
@@ -698,7 +803,7 @@ export default function FarmerMultiStepForm() {
                 {submitting ? "Submitting..." : "Confirm & Submit"}
               </button>
             ) : (
-              <button type="button" onClick={() => alert(`Selected lender: ${data.selectedLender || "-"}\nSelected supplier: ${data.selectedSupplier || "-"}`)} className="rounded-sm bg-primary px-3 py-2 text-sm text-white hover:opacity-90">
+              <button type="button" onClick={() => setShowFinishModal(true)} className="rounded-sm bg-primary px-3 py-2 text-sm text-white hover:opacity-90">
                 Finish
               </button>
             )}
@@ -706,6 +811,41 @@ export default function FarmerMultiStepForm() {
         </div>
       </section>
     </form>
+    {showFinishModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="w-full max-w-md rounded-md bg-white p-5 shadow-lg">
+          <div className="text-lg font-semibold text-foreground">Submission Complete</div>
+          <div className="mt-3 text-sm text-zinc-700">
+            <div className="mb-2">Here are your selected options:</div>
+            <ul className="mb-3 list-disc list-inside">
+              <li>
+                Lender: {lenderOptions.find(l => l.id === data.selectedLender)?.name || "-"}
+              </li>
+              {data.selectedSupplier && (
+                <li>
+                  Supplier: {supplierOptions.find(s => s.id === data.selectedSupplier)?.name}
+                </li>
+              )}
+            </ul>
+            <div>We will contact you based on your selections.</div>
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" className="rounded-sm border px-3 py-2 text-sm" onClick={() => setShowFinishModal(false)}>Close</button>
+            <button
+              type="button"
+              className="rounded-sm bg-primary px-3 py-2 text-sm text-white hover:opacity-90"
+              onClick={() => {
+                setShowFinishModal(false);
+                handleClearAll();
+              }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
