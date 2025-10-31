@@ -110,8 +110,9 @@ export default function HekoInsightsForm() {
     setAiResponse("Processing your query...");
 
     try {
-      const result = await mockAIResponse("hello", data); // For testing, it always sends "hello"
+      const result = await mockAIResponse(newMessage || "hello", data);
       setAiResponse(result);
+      setNewMessage(""); // Clear input after send
     } catch (err) {
       console.error(err);
       setAiResponse("Failed to fetch insights. Please try again.");
@@ -189,7 +190,7 @@ export default function HekoInsightsForm() {
       <section className="flex-1 rounded-md border border-primary/10 bg-white p-4 shadow-sm min-w-0 h-full overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="flex-1 overflow-auto">
-            {/* ------------------ NEW CHART ------------------ */}
+            {/* ------------------ NEW CHART / CHAT ------------------ */}
             {active === "chart" && (
               <div className="flex flex-col items-center justify-center h-full px-6">
                 <form onSubmit={handlePromptSubmit} className="w-full max-w-3xl">
@@ -205,11 +206,11 @@ export default function HekoInsightsForm() {
                     </label>
                     <input
                       type="text"
-                      placeholder="Ask your insight query..."
-                      value={aiResponse ? "" : ""}
+                      placeholder="Type your query..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
                       className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400 text-base"
                       aria-label="Insight prompt"
-                      disabled
                     />
                     <button
                       type="submit"
@@ -230,6 +231,7 @@ export default function HekoInsightsForm() {
                 </form>
               </div>
             )}
+
             {/* ------------------ CREDIT INSIGHTS ------------------ */}
             {active === "insights" && (
               <div className="space-y-5">
@@ -243,6 +245,7 @@ export default function HekoInsightsForm() {
                 </div>
               </div>
             )}
+
             {/* ------------------ HISTORY ------------------ */}
             {active === "history" && (
               <div className="flex h-full gap-4">
