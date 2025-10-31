@@ -4,6 +4,15 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Paperclip, Send, Trash2, Edit, Share2, Download } from "lucide-react";
 
+type HekoApiResponse = {
+  prediction?: string;
+  message?: string;
+  score?: number;
+  insights?: string[];
+  recommendations?: string[];
+  [key: string]: unknown;
+};
+
 type FarmerFormData = {
   name: string;
   gender: string;
@@ -60,6 +69,8 @@ export default function HekoInsightsForm() {
   const [aiResponse, setAiResponse] = useState("");
   const [insightIndex, setInsightIndex] = useState(0);
 
+  const [hekoResponse, setHekoResponse] = useState<HekoApiResponse | null>(null);
+
   const [historyList, setHistoryList] = useState<HistorySession[]>([]);
   const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -69,6 +80,10 @@ export default function HekoInsightsForm() {
   useEffect(() => {
     const saved = localStorage.getItem("farmerFormData");
     if (saved) setData(JSON.parse(saved));
+    const savedResp = localStorage.getItem("hekoApiResponse");
+    if (savedResp) {
+      try { setHekoResponse(JSON.parse(savedResp)); } catch {}
+    }
   }, []);
 
   // Mock insights feed
@@ -93,8 +108,8 @@ export default function HekoInsightsForm() {
   const prev = () => { if (activeIndex > 0) setActive(stepsDisplayed[activeIndex - 1].key); };
 
   // ------------------ NEW CHART / CHAT SECTION ------------------
-  const handlePromptSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePromptSubmit = async (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
     if (!newMessage.trim()) return;
     setSubmitting(true);
     setAiResponse("Processing your query...");
@@ -180,7 +195,7 @@ export default function HekoInsightsForm() {
             {/* ------------------ NEW CHART / CHAT ------------------ */}
             {active === "chart" && (
               <div className="flex flex-col items-center justify-center h-full px-6">
-                <form onSubmit={handlePromptSubmit} className="w-full max-w-3xl">
+                <div className="w-full max-w-3xl">
                   <div className="relative flex items-center bg-primary/5 rounded-full border border-primary/20 shadow-sm px-5 py-4 gap-3">
                     <label className="cursor-pointer text-primary hover:text-primary/80 transition" aria-label="Upload files">
                       <Paperclip size={20} />
@@ -200,7 +215,8 @@ export default function HekoInsightsForm() {
                       aria-label="Insight prompt"
                     />
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handlePromptSubmit}
                       disabled={submitting}
                       className="ml-2 p-2 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50"
                       title="Send"
@@ -215,12 +231,48 @@ export default function HekoInsightsForm() {
                       <pre className="whitespace-pre-wrap">{aiResponse}</pre>
                     </div>
                   )}
-                </form>
+                </div>
               </div>
             )}
 
             {/* ------------------ CREDIT INSIGHTS ------------------ */}
-            {/* unchanged */}
+            {active === "insights" && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-foreground">Credit Insights</h2>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div className="rounded-md border border-primary/10 p-4 bg-primary/5">
+                    <div className="text-sm text-gray-600">Credit Score</div>
+                    <div className="text-3xl font-bold text-primary mt-1">{hekoResponse?.score ?? "-"}</div>
+                    <div className="mt-2 text-sm text-gray-700">{hekoResponse?.prediction || hekoResponse?.message || "No prediction available."}</div>
+                  </div>
+                  <div className="rounded-md border border-primary/10 p-4">
+                    <div className="text-sm font-medium text-foreground">Recommendations</div>
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-700">
+                      {(() => {
+                        const score = hekoResponse?.score ?? null;
+                        if (score !== null && score >= 70) {
+                          const recs = [
+                            "Eligible for lender recommendations based on current risk profile.",
+                            "Recommended farm resource packages (inputs, irrigation, crop protection).",
+                            "Consider best-rate lenders and matched suppliers shown below.",
+                          ];
+                          return recs.map((r, i) => <li key={i}>{r}</li>);
+                        }
+                        const recs = [
+                          "Join farm management services to improve practices.",
+                          "Participate in agricultural initiatives in your county.",
+                          "Learn new practices to enhance yield and credit standing.",
+                        ];
+                        return recs.map((r, i) => <li key={i}>{r}</li>);
+                      })()}
+                      {(hekoResponse?.recommendations || []).map((r, i) => (
+                        <li key={`api-${i}`}>{String(r)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ------------------ HISTORY ------------------ */}
             {/* unchanged */}

@@ -40,10 +40,19 @@ export const sendHekoData = async (
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      let errBody = '';
+      try { errBody = await response.text(); } catch {}
+      throw new Error(`API request failed (${response.status} ${response.statusText}): ${errBody}`);
     }
 
-    const result: HekoApiResponse = await response.json();
+    // Try JSON first; if it fails, surface raw text
+    let result: HekoApiResponse;
+    try {
+      result = await response.json();
+    } catch (e) {
+      const raw = await response.text();
+      throw new Error(`API response is not valid JSON: ${raw}`);
+    }
     console.log('Model API Response:', result);
     return result;
   } catch (error) {
