@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Paperclip, Send, Trash2, Edit, Share2, Download } from "lucide-react";
-import { sendHekoData, HekoApiResponse } from "@/utils/api";
 
 type FarmerFormData = {
   name: string;
@@ -93,14 +92,14 @@ export default function HekoInsightsForm() {
   const next = () => { if (activeIndex < stepsDisplayed.length - 1) setActive(stepsDisplayed[activeIndex + 1].key); };
   const prev = () => { if (activeIndex > 0) setActive(stepsDisplayed[activeIndex - 1].key); };
 
-  // ------------------ NEW CHART SECTION ------------------
+  // ------------------ NEW CHART / CHAT SECTION ------------------
   const handlePromptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     setSubmitting(true);
     setAiResponse("Processing your query...");
 
-    // Mock AI response
+    // Mock AI response (replace this with real API later)
     setTimeout(() => {
       setAiResponse(`Hello, Welcome to Heko. Check your credit Score.`);
       setSubmitting(false);
